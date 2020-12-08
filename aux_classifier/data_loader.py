@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 
-def load_activations(activations_path, num_neurons_per_layer, is_brnn=True):
+def load_activations(activations_path, num_neurons_per_layer,  max_sent_l, is_brnn=True):
     """Load extracted activations.
 
     Arguments:
@@ -62,6 +62,8 @@ def load_activations(activations_path, num_neurons_per_layer, is_brnn=True):
             sentence_acts = []
             for layer_idx in range(num_layers):
                 sentence_acts.append(np.vstack(activations[layer_idx][sentence_idx]))
+            if(len(sentence_acts)>  max_sent_l):
+                    continue
             concatenated_activations.append(np.concatenate(sentence_acts, axis=1))
         activations = concatenated_activations
     elif file_ext == "hdf5":
@@ -80,6 +82,8 @@ def load_activations(activations_path, num_neurons_per_layer, is_brnn=True):
             sentence_acts = sentence_acts.reshape(
                 sentence_length, num_layers * embedding_size
             )
+            if(len(sentence_length)>  max_sent_l):
+                    continue
             activations.append(sentence_acts.numpy())
         num_layers = len(activations[0][0]) / num_neurons_per_layer
     elif file_ext == "json":
@@ -89,6 +93,8 @@ def load_activations(activations_path, num_neurons_per_layer, is_brnn=True):
             for line in fp:
                 token_acts = []
                 sentence_activations = json.loads(line)['features']
+                if(len(sentence_activations)>  max_sent_l):
+                    continue
                 for act in sentence_activations:
                     token_acts.append(np.concatenate([l['values'] for l in act['layers']]))
                 activations.append(np.vstack(token_acts))
@@ -222,20 +228,25 @@ def load_data(
         for line_idx, line in enumerate(source_fp):
             line_tokens = line.strip().split()
             if len(line_tokens) > max_sent_l:
+                print("Ignored one line", line_idx, "line:",line_tokens, " Max:", max_sent_l)
                 continue
             if ignore_start_token:
                 line_tokens = line_tokens[1:]
                 activations[line_idx] = activations[line_idx][1:, :]
             tokens["source"].append(line_tokens)
+    print("Source tokens:",len(tokens["source"]))
+
 
     with open(labels_path) as labels_fp:
         for line in labels_fp:
             line_tokens = line.strip().split()
             if len(line_tokens) > max_sent_l:
+                print("Ignored one label", line_idx, "line:",line_tokens, " Max:", max_sent_l)
                 continue
             if ignore_start_token:
                 line_tokens = line_tokens[1:]
             tokens["target"].append(line_tokens)
+    print("Target tokens:",len(tokens["target"]))
 
     assert len(tokens["source"]) == len(tokens["target"]), (
         "Number of lines do not match (source: %d, target: %d)!"

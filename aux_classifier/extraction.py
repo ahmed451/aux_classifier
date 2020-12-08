@@ -89,6 +89,30 @@ def get_model_and_tokenizer(
         )
         tokenizer = BertTokenizer.from_pretrained(init_model)
         sep = "##"
+    elif model_name.startswith("qarib"):
+        model = BertModel.from_pretrained(init_model, output_hidden_states=True).to(
+            device
+        )
+        tokenizer = BertTokenizer.from_pretrained(init_model)
+        sep = "##"
+    elif model_name.startswith("aubmindlab"):
+        model = BertModel.from_pretrained(init_model, output_hidden_states=True).to(
+            device
+        )
+        tokenizer = BertTokenizer.from_pretrained(init_model)
+        sep = "##"
+    elif model_name.startswith("bert-base-multilingual"):
+        model = BertModel.from_pretrained(init_model, output_hidden_states=True).to(
+            device
+        )
+        tokenizer = BertTokenizer.from_pretrained(init_model)
+        sep = "##"
+    elif model_name.startswith("asafaya"):
+        model = BertModel.from_pretrained(init_model, output_hidden_states=True).to(
+            device
+        )
+        tokenizer = BertTokenizer.from_pretrained(init_model)
+        sep = "##"
     elif model_name.startswith("distilbert"):
         model = DistilBertModel.from_pretrained(
             init_model, output_hidden_states=True
@@ -171,7 +195,7 @@ def get_sentence_repr(
         # Get tokenization counts if not already available
         for token_idx, token in enumerate(original_tokens):
             tok_ids = [x for x in tokenizer.encode(token) if x not in special_tokens_ids]
-            # print(tokenizer.convert_ids_to_tokens(tok_ids))
+            print(tokenizer.convert_ids_to_tokens(tok_ids))
             if token_idx != 0:
                 tok_ids = tok_ids[1:]
                 # print(tokenizer.convert_ids_to_tokens(tok_ids))
@@ -245,7 +269,7 @@ def make_hdf5_file(sentence_to_index, vectors, output_file_path):
         sentence_index_dataset[0] = json.dumps(sentence_to_index)
 
 def extract_representations(model_name, input_corpus, output_file, device="cpu", aggregation="last", output_type="json", filter_vocab=None, model_path=None, limit_max_occurrences=-1, random_weights=False, ignore_embeddings=False):
-    print("Loading model")
+    print("Loading model: ",model_name)
     model, tokenizer, sep = get_model_and_tokenizer(
         model_name,
         device=device,
