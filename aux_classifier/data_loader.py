@@ -82,7 +82,7 @@ def load_activations(activations_path, num_neurons_per_layer,  max_sent_l, is_br
             sentence_acts = sentence_acts.reshape(
                 sentence_length, num_layers * embedding_size
             )
-            if(len(sentence_length)>  max_sent_l):
+            if(sentence_length>  max_sent_l):
                     continue
             activations.append(sentence_acts.numpy())
         num_layers = len(activations[0][0]) / num_neurons_per_layer

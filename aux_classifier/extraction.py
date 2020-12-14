@@ -195,7 +195,7 @@ def get_sentence_repr(
         # Get tokenization counts if not already available
         for token_idx, token in enumerate(original_tokens):
             tok_ids = [x for x in tokenizer.encode(token) if x not in special_tokens_ids]
-            print(tokenizer.convert_ids_to_tokens(tok_ids))
+            #print(tokenizer.convert_ids_to_tokens(tok_ids))
             if token_idx != 0:
                 tok_ids = tok_ids[1:]
                 # print(tokenizer.convert_ids_to_tokens(tok_ids))
@@ -220,9 +220,9 @@ def get_sentence_repr(
             ]
         all_hidden_states = np.array(all_hidden_states)
 
-    print("Sentence          : \"%s\"" % (sentence))
-    print("Original    (%03d): %s" % (len(original_tokens), original_tokens))
-    print("Tokenized   (%03d): %s" % (len(tokenizer.convert_ids_to_tokens(ids)), tokenizer.convert_ids_to_tokens(ids)))
+    #print("Sentence          : \"%s\"" % (sentence))
+    #print("Original    (%03d): %s" % (len(original_tokens), original_tokens))
+    #print("Tokenized   (%03d): %s" % (len(tokenizer.convert_ids_to_tokens(ids)), tokenizer.convert_ids_to_tokens(ids)))
     
     ids_without_special_tokens = [x for x in ids if x not in special_tokens_ids]
     segmented_tokens = tokenizer.convert_ids_to_tokens(ids_without_special_tokens)
@@ -244,15 +244,15 @@ def get_sentence_repr(
         
         counter += tokenization_counts[token]
 
-    print("Detokenized (%03d): %s" % (len(detokenized), detokenized))
-    print("Counter: %d" % (counter))
+    #print("Detokenized (%03d): %s" % (len(detokenized), detokenized))
+    #print("Counter: %d" % (counter))
     
     if len(ids) >= 512:
         print("[WARNING] Input truncated because of length, skipping check")
     else:
         assert(counter == len(ids_without_special_tokens))
         assert(len(detokenized) == len(original_tokens))
-    print("===================================================================")
+    #print("===================================================================")
 
     return final_hidden_states, detokenized
 
@@ -268,7 +268,7 @@ def make_hdf5_file(sentence_to_index, vectors, output_file_path):
         )
         sentence_index_dataset[0] = json.dumps(sentence_to_index)
 
-def extract_representations(model_name, input_corpus, output_file, device="cpu", aggregation="last", output_type="json", filter_vocab=None, model_path=None, limit_max_occurrences=-1, random_weights=False, ignore_embeddings=False):
+def extract_representations(model_name, input_corpus, output_file, device="cpu", aggregation="last", output_type="json", decompose_layers=True, filter_vocab=None, model_path=None, limit_max_occurrences=-1, random_weights=False, ignore_embeddings=False):
     print("Loading model: ",model_name)
     model, tokenizer, sep = get_model_and_tokenizer(
         model_name,
@@ -302,7 +302,8 @@ def extract_representations(model_name, input_corpus, output_file, device="cpu",
                 % (output_file)
             )
         output_file = h5py.File(output_file, "w")
-        output_file.create_group("tokens")
+        #output_file.create_group("tokens")
+        sentence_to_index = {}
     elif output_type == "json":
         if not output_file.endswith(".json"):
             print(
@@ -312,6 +313,7 @@ def extract_representations(model_name, input_corpus, output_file, device="cpu",
         output_file = open(output_file, "w", encoding="utf-8")
 
     print("Extracting representations from model")
+    count = 0
     for sentence_idx, sentence in enumerate(corpus_generator(input_corpus)):
         hidden_states, extracted_words = get_sentence_repr(
             sentence,
@@ -325,37 +327,17 @@ def extract_representations(model_name, input_corpus, output_file, device="cpu",
             aggregation=aggregation,
         )
 
-        print("Hidden states: ", hidden_states.shape)
-        print("# Extracted words: ", len(extracted_words))
+        #print("Hidden states: ", hidden_states.shape)
+        #print("# Extracted words: ", len(extracted_words))
 
         if output_type == "hdf5":
-            for idx, extracted_word in enumerate(extracted_words):
-                if extracted_word in HDF5_SPECIAL_TOKENS:
-                    extracted_word = HDF5_SPECIAL_TOKENS[extracted_word]
-                hdf5_path = "tokens/%s" % (extracted_word)
-                if hdf5_path not in output_file:
-                    word_idx = 0
-                else:
-                    word_idx = len(output_file[hdf5_path].keys())
-                hdf5_path = "tokens/%s/%d" % (extracted_word, word_idx)
-                print("hdf5 path:", hdf5_path)
 
-                if limit_max_occurrences >= 0 and word_idx >= limit_max_occurrences:
-                    print("Skipping because of occurrence limit")
-                    continue
-
-                assert hdf5_path not in output_file
-                if decompose_layers:
-                    for layer_idx in range(13):
-                        dset = output_file.create_dataset(
-                            hdf5_path + "/%d" % (layer_idx), (768,), dtype="f"
-                        )
-                        dset[...] = hidden_states[layer_idx, idx, :]
-                    output_file[hdf5_path].attrs["context"] = sentence
-                else:
-                    dset = output_file.create_dataset(hdf5_path, (13, 768), dtype="f")
-                    dset[...] = hidden_states[:, idx, :]
-                    dset.attrs["context"] = sentence
+            sentence_to_index[str(count)+'|'+sentence] = str(count)
+            output_file.create_dataset(str(count),
+                                hidden_states.shape,
+                                dtype='float32',
+                                data=hidden_states)
+            count = count + 1
         elif output_type == "json":
             output_json = collections.OrderedDict()
             output_json["linex_index"] = sentence_idx
@@ -377,6 +359,10 @@ def extract_representations(model_name, input_corpus, output_file, device="cpu",
                 all_out_features.append(out_features)
             output_json["features"] = all_out_features
             output_file.write(json.dumps(output_json) + "\n")
+
+    if output_type == "hdf5":
+        sentence_index_dataset = output_file.create_dataset("sentence_to_index", (1,), dtype=h5py.special_dtype(vlen=str))
+        sentence_index_dataset[0] = json.dumps(sentence_to_index)
 
     output_file.close()
 
