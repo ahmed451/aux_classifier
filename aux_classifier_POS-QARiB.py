@@ -33,28 +33,21 @@ def main():
     parser.add_argument("--model_name", default='qarib/bert-base-qarib', help="Name of model")
     parser.add_argument("--input_corpus", help="Text file path with one sentence per line")
     parser.add_argument("--test_corpus", help="Text file path with one sentence per line")
+    parser.add_argument("--output_type", default='hdf5', help="Activations outputs type hdf5 or json")
+
 
     args = parser.parse_args()
 
     extraction.extract_representations(args.model_name,
                                        args.input_corpus,
-                                       args.input_corpus+'.hdf5',
-                                       aggregation="average" , output_type="hdf5"
+                                       args.input_corpus+'.'+args.output_type,
+                                       aggregation="average" , output_type=args.output_type
                                       )
 
-    # extraction.extract_representations(args.model_name,
-    #                                    args.input_corpus,
-    #                                    args.input_corpus+'.json',
-    #                                    aggregation="average" #, output_type="hdf5"
-    #                                   )
-    # Loading QARiB
-    activations_path=args.input_corpus+'.hdf5'
+    # Loading activations 
+    activations_path=args.input_corpus+'.'+args.output_type
     activations, num_layers = data_loader.load_activations(activations_path, 768, 512)
     print("hdf5 len:",len(activations))
-
-    # activations_path=args.input_corpus+'.json'
-    # activations, num_layers = data_loader.load_activations(activations_path, 768, 512)
-    # print("json len:",len(activations))
 
     tokens = data_loader.load_data(args.input_corpus,
                                    args.input_corpus+'.label',
@@ -71,22 +64,23 @@ def main():
     model = utils.train_logreg_model(X, y, lambda_l1=0.001, lambda_l2=0.001)
 
 
-    # Load test data
+    # Load test data and extract representations
     extraction.extract_representations(args.model_name,
                                        args.test_corpus,
-                                       args.test_corpus+'.hdf5',
-                                       aggregation="average" #, output_type="hdf5"
+                                       args.test_corpus+'.'+args.output_type,
+                                       aggregation="average" , output_type=args.output_type
                                       )
-    activations_test, num_layers = data_loader.load_activations(args.test_corpus+'.hdf5', 768, 512)
-    tokens_test = data_loader.load_data(args.input_corpus,
+
+    activations_test, num_layers = data_loader.load_activations(args.test_corpus+'.'+args.output_type, 768, 512)
+    tokens_test = data_loader.load_data(args.test_corpus,
                                    args.test_corpus+'.label',
                                    activations_test,
                                    512
                                   )
 
-    X_test, y_test, _ = utils.create_tensors(tokens_test, activations_test, 'LABEL1')
+    X_test, y_test, _ = utils.create_tensors(tokens_test, activations_test, 'LABEL1', mappings=mapping)
 
-    res = utils.evaluate_model(model, X_test, y_test, idx_to_class=idx2label)
+    res = utils.evaluate_model(model, X_test, y_test, idx_to_class=idx2label,source_tokens=tokens_test['source'])
 
 
     print(res['__OVERALL__'])
@@ -104,13 +98,13 @@ def main():
 
     for i in [0.01, 0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 0.75 ]:
         X_selected = utils.filter_activations_keep_neurons(ordering[:int(nlen*i)], X)
-
+        X_test_selected = utils.filter_activations_keep_neurons(ordering[:int(nlen*i)], X_test)
         print(X_selected.shape)
         model_selected = utils.train_logreg_model(X_selected, y, lambda_l1=0.001, lambda_l2=0.001)
-
-        eval_selected = utils.evaluate_model(model_selected, X_test, y_test, idx_to_class=idx2label)
-
-        print(i, eval_selected['__OVERALL__'], res['__OVERALL__'], (res['__OVERALL__']-eval_selected['__OVERALL__']))
+        eval_selected = utils.evaluate_model(model_selected, X_test_selected, y_test, idx_to_class=idx2label) 
+        print("WithNo:",i, eval_selected['__OVERALL__'], res['__OVERALL__'], (res['__OVERALL__']-eval_selected['__OVERALL__']))
+        eval_selected = utils.evaluate_model(model_selected, X_test_selected, y_test, idx2label, source_tokens=tokens_test['source'])
+        print('With:',i, eval_selected['__OVERALL__'], res['__OVERALL__'], (res['__OVERALL__']-eval_selected['__OVERALL__']))
 
 
 

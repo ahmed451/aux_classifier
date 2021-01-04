@@ -89,13 +89,29 @@ def get_model_and_tokenizer(
         )
         tokenizer = BertTokenizer.from_pretrained(init_model)
         sep = "##"
+    # Define QARiB https://huggingface.co/qarib/bert-base-qarib
     elif model_name.startswith("qarib"):
         model = BertModel.from_pretrained(init_model, output_hidden_states=True).to(
             device
         )
         tokenizer = BertTokenizer.from_pretrained(init_model)
         sep = "##"
+    # Define AraBERT https://huggingface.co/aubmindlab/bert-base-arabert
     elif model_name.startswith("aubmindlab"):
+        model = BertModel.from_pretrained(init_model, output_hidden_states=True).to(
+            device
+        )
+        tokenizer = BertTokenizer.from_pretrained(init_model)
+        sep = "##"
+    # Define ArabicBERT  https://huggingface.co/asafaya/bert-base-arabic
+    elif model_name.startswith("asafaya"):
+        model = BertModel.from_pretrained(init_model, output_hidden_states=True).to(
+            device
+        )
+        tokenizer = BertTokenizer.from_pretrained(init_model)
+        sep = "##"
+    #Define https://huggingface.co/UBC-NLP/MARBERT
+    elif model_name.startswith("UBC-NLP"):
         model = BertModel.from_pretrained(init_model, output_hidden_states=True).to(
             device
         )
@@ -107,12 +123,7 @@ def get_model_and_tokenizer(
         )
         tokenizer = BertTokenizer.from_pretrained(init_model)
         sep = "##"
-    elif model_name.startswith("asafaya"):
-        model = BertModel.from_pretrained(init_model, output_hidden_states=True).to(
-            device
-        )
-        tokenizer = BertTokenizer.from_pretrained(init_model)
-        sep = "##"
+
     elif model_name.startswith("distilbert"):
         model = DistilBertModel.from_pretrained(
             init_model, output_hidden_states=True
