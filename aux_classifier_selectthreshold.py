@@ -82,7 +82,7 @@ def main():
                                    512
                                   )
 
-    X_test, y_test, _ = utils.create_tensors(test_tokens, test_activations, 'LABEL1', mappings=mapping)
+    X_test, y_test, _ = utils.create_tensors(test_tokens, test_activations, 'MIX', mappings=mapping)
 
     res = utils.evaluate_model(model, X_test, y_test, idx_to_class=idx2label,source_tokens=test_tokens['source'])
 
