@@ -34,6 +34,7 @@ def main():
     parser.add_argument("--input_corpus", help="Text file path with one sentence per line")
     parser.add_argument("--test_corpus", help="Text file path with one sentence per line")
     parser.add_argument("--output_type", default='hdf5', help="Activations outputs type hdf5 or json")
+    parser.add_argument("--task", default='word', help="Activations outputs type hdf5 or json")
 
 
     args = parser.parse_args()
@@ -44,17 +45,22 @@ def main():
     extraction.extract_representations(args.model_name,
                                        args.input_corpus,
                                        activations_path,
-                                       aggregation="average" , output_type=args.output_type
+                                       aggregation="average" , output_type=args.output_type,
+                                       task = args.task
                                       )
 
     # Loading train activations
     activations, num_layers = data_loader.load_activations(activations_path, 768, 512)
     print("hdf5 len:",len(activations))
 
+    sep = ' '
+    if(args.task =='sent'):
+      sep = '\t'
     tokens = data_loader.load_data(args.input_corpus,
                                    args.input_corpus+'.label',
                                    activations,
-                                   512
+                                   512,
+                                   sep='\t'
                                   )
 
 
@@ -82,7 +88,7 @@ def main():
                                    512
                                   )
 
-    X_test, y_test, _ = utils.create_tensors(test_tokens, test_activations, 'MIX', mappings=mapping)
+    X_test, y_test, _ = utils.create_tensors(test_tokens, test_activations, 'SA', mappings=mapping)
 
     res = utils.evaluate_model(model, X_test, y_test, idx_to_class=idx2label,source_tokens=test_tokens['source'])
 
