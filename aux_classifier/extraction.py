@@ -58,6 +58,8 @@ def get_model_and_tokenizer(
 ):
     """
     model_path: if given, initialize from path instead of official repo
+    models typically cached in ~/.cache/torch/transformers/
+
     """
 
     init_model = model_name
@@ -177,7 +179,6 @@ def aggregate_repr(state, start, end, aggregation):
     elif aggregation == "average":
         return np.average(state[:, start : end + 1, :], axis=1)
 
-
 # this follows the HuggingFace API for pytorch-transformers
 def get_sentence_repr(
     sentence,
@@ -279,7 +280,7 @@ def make_hdf5_file(sentence_to_index, vectors, output_file_path):
         )
         sentence_index_dataset[0] = json.dumps(sentence_to_index)
 
-def extract_representations(model_name, input_corpus, output_file, device="cpu", aggregation="last", output_type="json", decompose_layers=True, filter_vocab=None, model_path=None, limit_max_occurrences=-1, random_weights=False, ignore_embeddings=False):
+def extract_representations(model_name, input_corpus, output_file, device="cpu", aggregation="last", output_type="json", task='word', decompose_layers=True, filter_vocab=None, model_path=None, limit_max_occurrences=-1, random_weights=False, ignore_embeddings=False):
     print("Loading model: ",model_name)
     model, tokenizer, sep = get_model_and_tokenizer(
         model_name,
@@ -305,7 +306,7 @@ def extract_representations(model_name, input_corpus, output_file, device="cpu",
                 filter_vocab.add(line.strip().split()[0].lower())
         print("Loaded %d words for vocabulary" % (len(filter_vocab)))
 
-    print("Preparing output file")
+    print("Preparing output file:"+output_file)
     if output_type == "hdf5":
         if not output_file.endswith(".hdf5"):
             print(
@@ -338,6 +339,8 @@ def extract_representations(model_name, input_corpus, output_file, device="cpu",
             aggregation=aggregation,
         )
 
+        if(task=='sent'):
+            hidden_states = hidden_states[:,0:1,:]
         #print("Hidden states: ", hidden_states.shape)
         #print("# Extracted words: ", len(extracted_words))
 

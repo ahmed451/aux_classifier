@@ -113,6 +113,7 @@ def load_aux_data(
     source_aux_path,
     activations,
     max_sent_l,
+    sep=' ',
     ignore_start_token=False,
 ):
     tokens = {"source_aux": [], "source": [], "target": []}
@@ -120,7 +121,8 @@ def load_aux_data(
     skipped_lines = set()
     with open(source_aux_path) as source_aux_fp:
         for line_idx, line in enumerate(source_aux_fp):
-            line_tokens = line.strip().split()
+            #print("Readig:",line_idx, line)
+            line_tokens = line.strip().split(sep)
             if len(line_tokens) > max_sent_l:
                 print("Skipping line #%d because of length (aux)" % (line_idx))
                 skipped_lines.add(line_idx)
@@ -130,7 +132,7 @@ def load_aux_data(
             tokens["source_aux"].append(line_tokens)
     with open(source_path) as source_fp:
         for line_idx, line in enumerate(source_fp):
-            line_tokens = line.strip().split()
+            line_tokens = line.strip().split(sep)
             if len(line_tokens) > max_sent_l:
                 print("Skipping line #%d because of length (source)" % (line_idx))
                 skipped_lines.add(line_idx)
@@ -140,7 +142,7 @@ def load_aux_data(
 
     with open(labels_path) as labels_fp:
         for line_idx, line in enumerate(labels_fp):
-            line_tokens = line.strip().split()
+            line_tokens = line.strip().split(sep)
             if len(line_tokens) > max_sent_l:
                 print("Skipping line #%d because of length (label)" % (line_idx))
                 skipped_lines.add(line_idx)
@@ -219,6 +221,7 @@ def load_data(
     labels_path,
     activations,
     max_sent_l,
+    sep = ' ',
     ignore_start_token=False,
     sentence_classification=False,
 ):
@@ -226,7 +229,7 @@ def load_data(
 
     with open(source_path) as source_fp:
         for line_idx, line in enumerate(source_fp):
-            line_tokens = line.strip().split()
+            line_tokens = line.strip().split(sep)
             if len(line_tokens) > max_sent_l:
                 print("Ignored one line", line_idx, "line:",line_tokens, " Max:", max_sent_l)
                 continue
@@ -239,7 +242,7 @@ def load_data(
 
     with open(labels_path) as labels_fp:
         for line in labels_fp:
-            line_tokens = line.strip().split()
+            line_tokens = line.strip().split(sep)
             if len(line_tokens) > max_sent_l:
                 print("Ignored one label", line_idx, "line:",line_tokens, " Max:", max_sent_l)
                 continue
