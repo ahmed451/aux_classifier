@@ -31,6 +31,7 @@ def plot_neurons_per_layer(toplayers, title, numberlayers=13, layersize = 768):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_name", default='qarib/bert-base-qarib', help="Name of model")
+    parser.add_argument("--model_path", default=None, help="Local model path")
     parser.add_argument("--input_corpus", help="Text file path with one sentence per line")
     parser.add_argument("--test_corpus", help="Text file path with one sentence per line")
     parser.add_argument("--output_type", default='hdf5', help="Activations outputs type hdf5 or json")
@@ -46,7 +47,8 @@ def main():
                                        args.input_corpus,
                                        activations_path,
                                        aggregation="average" , output_type=args.output_type,
-                                       task = args.task
+                                       task = args.task,
+                                       model_path = args.model_path
                                       )
 
     # Loading train activations
@@ -78,14 +80,17 @@ def main():
     extraction.extract_representations(args.model_name,
                                        args.test_corpus,
                                        test_activations_path,
-                                       aggregation="average" , output_type=args.output_type
+                                       aggregation="average" , output_type=args.output_type,
+                                       task = args.task,
+                                       model_path = args.model_path
                                       )
 
     test_activations, num_layers = data_loader.load_activations(test_activations_path, 768, 512)
     test_tokens = data_loader.load_data(args.test_corpus,
                                    args.test_corpus+'.label',
                                    test_activations,
-                                   512
+                                   512,
+                                   sep='\t'
                                   )
 
     X_test, y_test, _ = utils.create_tensors(test_tokens, test_activations, 'SA', mappings=mapping)
