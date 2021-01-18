@@ -62,7 +62,7 @@ def main():
                                    args.input_corpus+'.label',
                                    activations,
                                    512,
-                                   sep='\t'
+                                   sep
                                   )
 
 
@@ -90,7 +90,7 @@ def main():
                                    args.test_corpus+'.label',
                                    test_activations,
                                    512,
-                                   sep='\t'
+                                   sep
                                   )
 
     X_test, y_test, _ = utils.create_tensors(test_tokens, test_activations, 'SA', mappings=mapping)
