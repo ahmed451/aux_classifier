@@ -260,6 +260,8 @@ def get_sentence_repr(
     #print("Counter: %d" % (counter))
     
     if len(ids) >= 512:
+        pprint("Original    (%03d): %s" % (len(original_tokens), original_tokens))
+        print("Tokenized   (%03d): %s" % (len(tokenizer.convert_ids_to_tokens(ids)), tokenizer.convert_ids_to_tokens(ids)))
         print("[WARNING] Input truncated because of length, skipping check")
     else:
         assert(counter == len(ids_without_special_tokens))
